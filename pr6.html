@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Калькулятор електричних навантажень</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            color: #333;
+        }
+        h1, h2 {
+            color: #2c3e50;
+        }
+        .section {
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e8f4fc;
+            border-radius: 4px;
+            border-left: 4px solid #3498db;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 10px 20px;
+            background-color: #eee;
+            cursor: pointer;
+            margin-right: 5px;
+            border-radius: 5px 5px 0 0;
+        }
+        .tab.active {
+            background-color: #3498db;
+            color: white;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <h1>Калькулятор електричних навантажень методом впорядкованих діаграм</h1>
+    
+    <div class="tabs">
+        <div class="tab active" onclick="openTab(event, 'input')">Вхідні дані</div>
+        <div class="tab" onclick="openTab(event, 'results')">Результати</div>
+        <div class="tab" onclick="openTab(event, 'theory')">Теорія</div>
+    </div>
+    
+    <div id="input" class="tab-content active">
+        <div class="section">
+            <h2>Вхідні параметри для ШР1</h2>
+            
+            <div class="input-group">
+                <label for="grinder_power">Шліфувальний верстат - номінальна потужність (кВт):</label>
+                <input type="number" id="grinder_power" step="1" value="20">
+            </div>
+            
+            <div class="input-group">
+                <label for="grinder_kv">Шліфувальний верстат - коефіцієнт використання:</label>
+                <input type="number" id="grinder_kv" step="0.01" value="0.15">
+            </div>
+            
+            <div class="input-group">
+                <label for="grinder_count">Шліфувальний верстат - кількість:</label>
+                <input type="number" id="grinder_count" step="1" value="4">
+            </div>
+            
+            <div class="input-group">
+                <label for="grinder_tg">Шліфувальний верстат - коефіцієнт реактивної потужності (tgφ):</label>
+                <input type="number" id="grinder_tg" step="0.01" value="1.33">
+            </div>
+            
+            <!-- Аналогічні поля для інших електроприймачів -->
+            
+            <button onclick="calculateLoads()">Розрахувати навантаження</button>
+        </div>
+    </div>
+    
+    <div id="results" class="tab-content">
+        <div class="section">
+            <h2>Результати розрахунків</h2>
+            
+            <h3>Результати для ШР1</h3>
+            <table>
+                <tr>
+                    <th>Показник</th>
+                    <th>Значення</th>
+                </tr>
+                <tr>
+                    <td>Груповий коефіцієнт використання (Кв)</td>
+                    <td id="kv_shr1"></td>
+                </tr>
+                <tr>
+                    <td>Ефективна кількість ЕП (ne)</td>
+                    <td id="ne_shr1"></td>
+                </tr>
+                <tr>
+                    <td>Розрахунковий коефіцієнт активної потужності (Kр)</td>
+                    <td id="kp_shr1"></td>
+                </tr>
+                <tr>
+                    <td>Розрахункове активне навантаження (Pр, кВт)</td>
+                    <td id="pp_shr1"></td>
+                </tr>
+                <tr>
+                    <td>Розрахункове реактивне навантаження (Qр, квар)</td>
+                    <td id="qp_shr1"></td>
+                </tr>
+                <tr>
+                    <td>Повна потужність (Sр, кВ·А)</td>
+                    <td id="sp_shr1"></td>
+                </tr>
+                <tr>
+                    <td>Розрахунковий груповий струм (Iр, А)</td>
+                    <td id="ip_shr1"></td>
+                </tr>
+            </table>
+            
+            <h3>Результати для цеху в цілому</h3>
+            <table>
+                <tr>
+                    <th>Показник</th>
+                    <th>Значення</th>
+                </tr>
+                <tr>
+                    <td>Коефіцієнт використання цеху (Кв)</td>
+                    <td id="kv_workshop"></td>
+                </tr>
+                <tr>
+                    <td>Ефективна кількість ЕП цеху (ne)</td>
+                    <td id="ne_workshop"></td>
+                </tr>
+                <tr>
+                    <td>Розрахунковий коефіцієнт активної потужності (Kр)</td>
+                    <td id="kp_workshop"></td>
+                </tr>
+                <tr>
+                    <td>Розрахункове активне навантаження (Pр, кВт)</td>
+                    <td id="pp_workshop"></td>
+                </tr>
+                <tr>
+                    <td>Розрахункове реактивне навантаження (Qр, квар)</td>
+                    <td id="qp_workshop"></td>
+                </tr>
+                <tr>
+                    <td>Повна потужність (Sр, кВ·А)</td>
+                    <td id="sp_workshop"></td>
+                </tr>
+                <tr>
+                    <td>Розрахунковий груповий струм (Iр, А)</td>
+                    <td id="ip_workshop"></td>
+                </tr>
+            </table>
+        </div>
+    </div>
+    
+    <div id="theory" class="tab-content">
+        <div class="section">
+            <h2>Теоретичні відомості</h2>
+            <p>Метод впорядкованих діаграм (метод коефіцієнта максимуму) - основний метод розрахунку електричних навантажень силових електроприймачів.</p>
+            
+            <h3>Основні поняття:</h3>
+            <ul>
+                <li><strong>Коефіцієнт використання (Кв)</strong> - відношення середньої потужності до номінальної</li>
+                <li><strong>Ефективна кількість ЕП (ne)</strong> - кількість однакових за потужністю ЕП, яка за навантаженням еквівалентна групі різних ЕП</li>
+                <li><strong>Коефіцієнт максимуму (Kм)</strong> - відношення максимального навантаження до середнього</li>
+            </ul>
+            
+            <h3>Основні формули:</h3>
+            <p>Груповий коефіцієнт використання:</p>
+            <p>Кв = Σ(Pн·Кв) / ΣPн</p>
+            
+            <p>Ефективна кількість ЕП:</p>
+            <p>ne = (ΣPн)² / Σ(Pн²)</p>
+            
+            <p>Розрахункове активне навантаження:</p>
+            <p>Pр = Kр·Кв·ΣPн</p>
+        </div>
+    </div>
+
+    <script>
+        // Функція для перемикання вкладок
+        function openTab(evt, tabName) {
+            const tabContents = document.getElementsByClassName("tab-content");
+            for (let i = 0; i < tabContents.length; i++) {
+                tabContents[i].classList.remove("active");
+            }
+            
+            const tabs = document.getElementsByClassName("tab");
+            for (let i = 0; i < tabs.length; i++) {
+                tabs[i].classList.remove("active");
+            }
+            
+            document.getElementById(tabName).classList.add("active");
+            evt.currentTarget.classList.add("active");
+        }
+        
+        // Функція для розрахунку навантажень
+        function calculateLoads() {
+            // Отримання вхідних даних для ШР1
+            const grinderPower = parseFloat(document.getElementById('grinder_power').value);
+            const grinderKv = parseFloat(document.getElementById('grinder_kv').value);
+            const grinderCount = parseFloat(document.getElementById('grinder_count').value);
+            const grinderTg = parseFloat(document.getElementById('grinder_tg').value);
+            
+            // Розрахунки для ШР1
+            const nP = grinderCount * grinderPower;
+            const nPKv = nP * grinderKv;
+            const nPKvTg = nPKv * grinderTg;
+            const nP2 = grinderCount * Math.pow(grinderPower, 2);
+            
+            // Груповий коефіцієнт використання
+            const Kv = nPKv / nP;
+            
+            // Ефективна кількість ЕП
+            const ne = Math.pow(nP, 2) / nP2;
+            
+            // Розрахунковий коефіцієнт активної потужності (з таблиці)
+            const Kp = getKp(Kv, Math.round(ne));
+            
+            // Розрахункові навантаження
+            const Pp = Kp * nPKv;
+            const Qp = 1.0 * nPKvTg;
+            const Sp = Math.sqrt(Math.pow(Pp, 2) + Math.pow(Qp, 2));
+            const Ip = Pp / (0.38 * Math.sqrt(3));
+            
+            // Вивід результатів для ШР1
+            document.getElementById('kv_shr1').textContent = Kv.toFixed(4);
+            document.getElementById('ne_shr1').textContent = Math.round(ne);
+            document.getElementById('kp_shr1').textContent = Kp.toFixed(2);
+            document.getElementById('pp_shr1').textContent = Pp.toFixed(2);
+            document.getElementById('qp_shr1').textContent = Qp.toFixed(2);
+            document.getElementById('sp_shr1').textContent = Sp.toFixed(2);
+            document.getElementById('ip_shr1').textContent = Ip.toFixed(2);
+            
+            // Розрахунки для цеху в цілому (припускаємо 3 однакові ШР)
+            const totalP = 3 * nP;
+            const totalPKv = 3 * nPKv;
+            const totalPKvTg = 3 * nPKvTg;
+            const totalP2 = 3 * nP2;
+            
+            // Груповий коефіцієнт використання для цеху
+            const workshopKv = totalPKv / totalP;
+            
+            // Ефективна кількість ЕП для цеху
+            const workshopNe = Math.pow(totalP, 2) / totalP2;
+            
+            // Розрахунковий коефіцієнт активної потужності для цеху
+            const workshopKp = getWorkshopKp(workshopKv, Math.round(workshopNe));
+            
+            // Розрахункові навантаження для цеху
+            const workshopPp = workshopKp * totalPKv;
+            const workshopQp = workshopKp * totalPKvTg;
+            const workshopSp = Math.sqrt(Math.pow(workshopPp, 2) + Math.pow(workshopQp, 2));
+            const workshopIp = workshopPp / (0.38 * Math.sqrt(3));
+            
+            // Вивід результатів для цеху
+            document.getElementById('kv_workshop').textContent = workshopKv.toFixed(4);
+            document.getElementById('ne_workshop').textContent = Math.round(workshopNe);
+            document.getElementById('kp_workshop').textContent = workshopKp.toFixed(2);
+            document.getElementById('pp_workshop').textContent = workshopPp.toFixed(2);
+            document.getElementById('qp_workshop').textContent = workshopQp.toFixed(2);
+            document.getElementById('sp_workshop').textContent = workshopSp.toFixed(2);
+            document.getElementById('ip_workshop').textContent = workshopIp.toFixed(2);
+            
+            // Відкриваємо вкладку з результатами
+            openTab({currentTarget: document.querySelector('.tab:nth-child(2)')}, 'results');
+        }
+        
+        // Функція для отримання Kp з таблиці (спрощений варіант)
+        function getKp(kv, ne) {
+            // У реальному додатку тут була б таблична логіка
+            // Для прикладу використовуємо спрощену логіку
+            if (kv < 0.2) {
+                return 1.25;
+            } else if (kv < 0.3) {
+                return 1.2;
+            } else {
+                return 1.1;
+            }
+        }
+        
+        // Функція для отримання Kp для цеху з таблиці
+        function getWorkshopKp(kv, ne) {
+            // У реальному додатку тут була б таблична логіка
+            // Для прикладу використовуємо спрощену логіку
+            if (kv < 0.3) {
+                return 0.7;
+            } else if (kv < 0.4) {
+                return 0.65;
+            } else {
+                return 0.6;
+            }
+        }
+    </script>
+</body>
+</html>
